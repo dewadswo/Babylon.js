@@ -1955,3 +1955,84 @@ var BABYLON;
     }());
     BABYLON.GLTFFileLoader.RegisterExtension(new GLTFBinaryExtension());
 })(BABYLON || (BABYLON = {}));
+
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var BABYLON;
+(function (BABYLON) {
+    var GLTFMaterialsPbrExtension = (function (_super) {
+        __extends(GLTFMaterialsPbrExtension, _super);
+        function GLTFMaterialsPbrExtension() {
+            _super.call(this, "FRAUNHOFER_materials_pbr");
+        }
+        GLTFMaterialsPbrExtension.prototype.loadMaterialAsync = function (gltfRuntime, id, onSuccess, onError) {
+            var material = gltfRuntime.materials[id];
+            if (!material.extensions || !(this.name in material.extensions)) {
+                return false;
+            }
+            var materialPbrExt = material.extensions[this.name];
+            switch (materialPbrExt.materialModel) {
+                case "PBR_specular_glossiness":
+                    onSuccess(this._loadSpecularGlossinessMaterial(gltfRuntime, id, materialPbrExt));
+                    break;
+                default:
+                    BABYLON.Tools.Error(this.name + " of material '" + id + "' specifies an unsupported material model '" + materialPbrExt.materialModel + "'");
+                    onError();
+                    break;
+            }
+            return true;
+        };
+        GLTFMaterialsPbrExtension.prototype._loadDiffuseTexture = function (gltfRuntime, materialId, textureId, pbrMaterial) {
+            var onSuccess = function (texture) {
+                pbrMaterial.albedoTexture = texture;
+                pbrMaterial.useAlphaFromAlbedoTexture = true;
+            };
+            var onError = function () {
+                BABYLON.Tools.Error("Diffuse texture '" + textureId + "' of PBR material '" + materialId + "' failed to load");
+            };
+            BABYLON.GLTFFileLoaderExtension.LoadTextureAsync(gltfRuntime, textureId, onSuccess, onError);
+        };
+        GLTFMaterialsPbrExtension.prototype._loadSpecularGlossinessTexture = function (gltfRuntime, materialId, textureId, pbrMaterial) {
+            var onSuccess = function (texture) {
+                pbrMaterial.reflectivityTexture = texture;
+                pbrMaterial.useMicroSurfaceFromReflectivityMapAlpha = true;
+            };
+            var onError = function () {
+                BABYLON.Tools.Error("Specular glossiness texture '" + textureId + "' of PBR material '" + materialId + "' failed to load");
+            };
+            BABYLON.GLTFFileLoaderExtension.LoadTextureAsync(gltfRuntime, textureId, onSuccess, onError);
+        };
+        GLTFMaterialsPbrExtension.prototype._loadSpecularGlossinessMaterial = function (gltfRuntime, id, materialPbrExt) {
+            var pbrMaterial = new BABYLON.PBRMaterial(id, gltfRuntime.scene);
+            pbrMaterial.sideOrientation = BABYLON.Material.CounterClockWiseSideOrientation;
+            for (var val in materialPbrExt.values) {
+                var value = materialPbrExt.values[val];
+                switch (val) {
+                    case "diffuseFactor":
+                        pbrMaterial.albedoColor = new BABYLON.Color3(value[0], value[1], value[2]);
+                        pbrMaterial.alpha = value[3];
+                        break;
+                    case "specularFactor":
+                        pbrMaterial.reflectivityColor = new BABYLON.Color3(value[0], value[1], value[2]);
+                        break;
+                    case "glossinessFactor":
+                        pbrMaterial.microSurface = value;
+                        break;
+                    case "diffuseTexture":
+                        this._loadDiffuseTexture(gltfRuntime, id, value, pbrMaterial);
+                        break;
+                    case "specularGlossinessTexture":
+                        this._loadSpecularGlossinessTexture(gltfRuntime, id, value, pbrMaterial);
+                        break;
+                }
+            }
+            return pbrMaterial;
+        };
+        return GLTFMaterialsPbrExtension;
+    }(BABYLON.GLTFFileLoaderExtension));
+    BABYLON.GLTFMaterialsPbrExtension = GLTFMaterialsPbrExtension;
+    BABYLON.GLTFFileLoader.RegisterExtension(new GLTFMaterialsPbrExtension());
+})(BABYLON || (BABYLON = {}));

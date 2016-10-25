@@ -18,7 +18,8 @@
         "glTF/babylon.glTFFileLoader.ts",
         "glTF/babylon.glTFFileLoaderUtils.ts",
         "glTF/babylon.glTFFileLoaderExtension.ts",
-        "glTF/babylon.glTFBinaryExtension.ts"
+        "glTF/babylon.glTFBinaryExtension.ts",
+        "glTF/babylon.glTFMaterialsPbrExtension.ts"
       ],
       "output": "./glTF",
       "filename": "babylon.glTFFileLoader.js"
