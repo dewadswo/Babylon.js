@@ -66,7 +66,7 @@ uniform vec2 vAlbedoInfos;
 #ifdef AMBIENT
 varying vec2 vAmbientUV;
 uniform sampler2D ambientSampler;
-uniform vec2 vAmbientInfos;
+uniform vec3 vAmbientInfos;
 #endif
 
 #ifdef OPACITY	
@@ -171,6 +171,7 @@ uniform mat4 reflectionMatrix;
 #include<harmonicsFunctions>
 #include<pbrLightFunctions>
 
+#include<helperFunctions>
 #include<bumpFragmentFunctions>
 #include<clipPlaneFragmentDeclaration>
 #include<logDepthDeclaration>
@@ -183,6 +184,19 @@ void main(void) {
 
 	vec3 viewDirectionW = normalize(vEyePosition - vPositionW);
 
+	// Bump
+	#ifdef NORMAL
+		vec3 normalW = normalize(vNormalW);
+	#else
+		vec3 normalW = vec3(1.0, 1.0, 1.0);
+	#endif
+
+	#ifdef ALBEDO
+		vec2 diffuseUV = vAlbedoUV;
+	#endif
+
+	#include<bumpFragment>
+
 	// Albedo
 	vec4 surfaceAlbedo = vec4(1., 1., 1., 1.);
 	vec3 surfaceAlbedoContribution = vAlbedoColor.rgb;
@@ -191,7 +205,7 @@ void main(void) {
 	float alpha = vAlbedoColor.a;
 
 #ifdef ALBEDO
-	surfaceAlbedo = texture2D(albedoSampler, vAlbedoUV);
+	surfaceAlbedo = texture2D(albedoSampler, diffuseUV);
 	surfaceAlbedo = vec4(toLinearSpace(surfaceAlbedo.rgb), surfaceAlbedo.a);
 
 #ifndef LINKREFRACTIONTOTRANSPARENCY
@@ -220,20 +234,12 @@ void main(void) {
 	surfaceAlbedo.rgb = mix(surfaceAlbedo.rgb, vOverloadedAlbedo, vOverloadedIntensity.y);
 #endif
 
-	// Bump
-#ifdef NORMAL
-	vec3 normalW = normalize(vNormalW);
-#else
-	vec3 normalW = vec3(1.0, 1.0, 1.0);
-#endif
-
-#include<bumpFragment>
-
 	// Ambient color
 	vec3 ambientColor = vec3(1., 1., 1.);
 
 #ifdef AMBIENT
 	ambientColor = texture2D(ambientSampler, vAmbientUV).rgb * vAmbientInfos.y;
+	ambientColor = vec3(1., 1., 1.) - ((vec3(1., 1., 1.) - ambientColor) * vAmbientInfos.z);
 
 #ifdef OVERLOADEDVALUES
 	ambientColor.rgb = mix(ambientColor.rgb, vOverloadedAmbient, vOverloadedIntensity.x);
