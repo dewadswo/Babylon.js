@@ -1985,51 +1985,70 @@ var BABYLON;
             }
             return true;
         };
-        GLTFMaterialsPbrExtension.prototype._loadDiffuseTexture = function (gltfRuntime, materialId, textureId, pbrMaterial) {
-            var onSuccess = function (texture) {
-                pbrMaterial.albedoTexture = texture;
-                pbrMaterial.useAlphaFromAlbedoTexture = true;
-            };
-            var onError = function () {
-                BABYLON.Tools.Error("Diffuse texture '" + textureId + "' of PBR material '" + materialId + "' failed to load");
-            };
-            BABYLON.GLTFFileLoaderExtension.LoadTextureAsync(gltfRuntime, textureId, onSuccess, onError);
-        };
-        GLTFMaterialsPbrExtension.prototype._loadSpecularGlossinessTexture = function (gltfRuntime, materialId, textureId, pbrMaterial) {
-            var onSuccess = function (texture) {
-                pbrMaterial.reflectivityTexture = texture;
-                pbrMaterial.useMicroSurfaceFromReflectivityMapAlpha = true;
-            };
-            var onError = function () {
-                BABYLON.Tools.Error("Specular glossiness texture '" + textureId + "' of PBR material '" + materialId + "' failed to load");
-            };
-            BABYLON.GLTFFileLoaderExtension.LoadTextureAsync(gltfRuntime, textureId, onSuccess, onError);
-        };
         GLTFMaterialsPbrExtension.prototype._loadSpecularGlossinessMaterial = function (gltfRuntime, id, materialPbrExt) {
-            var pbrMaterial = new BABYLON.PBRMaterial(id, gltfRuntime.scene);
-            pbrMaterial.sideOrientation = BABYLON.Material.CounterClockWiseSideOrientation;
-            for (var val in materialPbrExt.values) {
-                var value = materialPbrExt.values[val];
-                switch (val) {
-                    case "diffuseFactor":
-                        pbrMaterial.albedoColor = new BABYLON.Color3(value[0], value[1], value[2]);
-                        pbrMaterial.alpha = value[3];
-                        break;
-                    case "specularFactor":
-                        pbrMaterial.reflectivityColor = new BABYLON.Color3(value[0], value[1], value[2]);
-                        break;
-                    case "glossinessFactor":
-                        pbrMaterial.microSurface = value;
-                        break;
-                    case "diffuseTexture":
-                        this._loadDiffuseTexture(gltfRuntime, id, value, pbrMaterial);
-                        break;
-                    case "specularGlossinessTexture":
-                        this._loadSpecularGlossinessTexture(gltfRuntime, id, value, pbrMaterial);
-                        break;
-                }
+            var material = new BABYLON.PBRMaterial(id, gltfRuntime.scene);
+            material.sideOrientation = BABYLON.Material.CounterClockWiseSideOrientation;
+            var values = materialPbrExt.values;
+            // Diffuse
+            if (values.diffuseFactor) {
+                material.albedoColor = BABYLON.Color3.FromArray(values.diffuseFactor);
+                material.alpha = values.diffuseFactor[3];
             }
-            return pbrMaterial;
+            if (values.diffuseTexture) {
+                this._loadTexture(gltfRuntime, id, values.diffuseTexture, function (texture) {
+                    material.albedoTexture = texture;
+                    material.useAlphaFromAlbedoTexture = true;
+                });
+            }
+            // Specular - Glossiness
+            if (values.specularFactor) {
+                material.reflectivityColor = BABYLON.Color3.FromArray(values.specularFactor);
+            }
+            material.microSurface = 1;
+            if (values.glossinessFactor) {
+                material.microSurface = values.glossinessFactor;
+            }
+            if (values.specularGlossinessTexture) {
+                this._loadTexture(gltfRuntime, id, values.specularGlossinessTexture, function (texture) {
+                    material.reflectivityTexture = texture;
+                    material.useMicroSurfaceFromReflectivityMapAlpha = true;
+                });
+            }
+            // Normal
+            if (values.normalTexture) {
+                this._loadTexture(gltfRuntime, id, values.normalTexture, function (texture) {
+                    material.bumpTexture = texture;
+                    if (values.normalScale) {
+                        material.bumpTexture.level = values.normalScale;
+                    }
+                });
+            }
+            // Occlusion
+            if (values.occlusionTexture) {
+                this._loadTexture(gltfRuntime, id, values.occlusionTexture, function (texture) {
+                    material.ambientTexture = texture;
+                    if (values.occlusionStrength) {
+                        material.ambientTextureStrength = values.occlusionStrength;
+                    }
+                });
+            }
+            // Emission
+            material.useEmissiveAsIllumination = true;
+            if (values.emissionFactor) {
+                material.emissiveColor = BABYLON.Color3.FromArray(values.emissionFactor);
+            }
+            if (values.emissionTexture) {
+                this._loadTexture(gltfRuntime, id, values.emissionTexture, function (texture) {
+                    material.emissiveTexture = texture;
+                });
+            }
+            return material;
+        };
+        GLTFMaterialsPbrExtension.prototype._loadTexture = function (gltfRuntime, materialId, textureId, onLoaded) {
+            var onError = function () {
+                BABYLON.Tools.Error("PBR material texture failed to load. material=\"" + materialId + "\", texture=\"" + textureId + "\"");
+            };
+            BABYLON.GLTFFileLoaderExtension.LoadTextureAsync(gltfRuntime, textureId, onLoaded, onError);
         };
         return GLTFMaterialsPbrExtension;
     }(BABYLON.GLTFFileLoaderExtension));

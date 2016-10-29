@@ -1,7 +1,21 @@
 ﻿module BABYLON {
     interface IGLTFMaterialsPbrExtension {
         materialModel: string;
-        values: Object;
+        values: any;
+    }
+
+    interface IGLTFMaterialsPbrExtensionSpecularGlossiness {
+        diffuseFactor: number[];
+        diffuseTexture: string;
+        specularFactor: number[];
+        glossinessFactor: number;
+        specularGlossinessTexture: string;
+        normalTexture: string;
+        normalScale: number;
+        occlusionTexture: string;
+        occlusionStrength: number;
+        emissionFactor: number[];
+        emissionTexture: string;
     }
 
     export class GLTFMaterialsPbrExtension extends GLTFFileLoaderExtension {
@@ -29,58 +43,89 @@
             return true;
         }
 
-        private _loadDiffuseTexture(gltfRuntime: IGLTFRuntime, materialId: string, textureId: string, pbrMaterial: PBRMaterial): void {
-            var onSuccess = (texture: Texture) => {
-                pbrMaterial.albedoTexture = texture;
-                pbrMaterial.useAlphaFromAlbedoTexture = true;
-            };
-
-            var onError = () => {
-                Tools.Error("Diffuse texture '" + textureId + "' of PBR material '" + materialId + "' failed to load");
-            };
-
-            GLTFFileLoaderExtension.LoadTextureAsync(gltfRuntime, textureId, onSuccess, onError);
-        }
-
-        private _loadSpecularGlossinessTexture(gltfRuntime: IGLTFRuntime, materialId: string, textureId: string, pbrMaterial: PBRMaterial): void {
-            var onSuccess = (texture: Texture) => {
-                pbrMaterial.reflectivityTexture = texture;
-                pbrMaterial.useMicroSurfaceFromReflectivityMapAlpha = true;
-            }
-
-            var onError = () => {
-                Tools.Error("Specular glossiness texture '" + textureId + "' of PBR material '" + materialId + "' failed to load");
-            };
-
-            GLTFFileLoaderExtension.LoadTextureAsync(gltfRuntime, textureId, onSuccess, onError);
-        }
-
         private _loadSpecularGlossinessMaterial(gltfRuntime: IGLTFRuntime, id: string, materialPbrExt: IGLTFMaterialsPbrExtension): Material {
-            var pbrMaterial = new PBRMaterial(id, gltfRuntime.scene);
-            pbrMaterial.sideOrientation = Material.CounterClockWiseSideOrientation;
-            for (var val in materialPbrExt.values) {
-                var value = materialPbrExt.values[val];
-                switch (val) {
-                    case "diffuseFactor":
-                        pbrMaterial.albedoColor = new Color3(value[0], value[1], value[2]);
-                        pbrMaterial.alpha = value[3];
-                        break;
-                    case "specularFactor":
-                        pbrMaterial.reflectivityColor = new Color3(value[0], value[1], value[2]);
-                        break;
-                    case "glossinessFactor":
-                        pbrMaterial.microSurface = value;
-                        break;
-                    case "diffuseTexture":
-                        this._loadDiffuseTexture(gltfRuntime, id, <string>value, pbrMaterial);
-                        break;
-                    case "specularGlossinessTexture":
-                        this._loadSpecularGlossinessTexture(gltfRuntime, id, <string>value, pbrMaterial);
-                        break;
-                }
+            var material = new PBRMaterial(id, gltfRuntime.scene);
+            material.sideOrientation = Material.CounterClockWiseSideOrientation;
+
+            var values: IGLTFMaterialsPbrExtensionSpecularGlossiness = materialPbrExt.values;
+
+            // Diffuse
+
+            if (values.diffuseFactor) {
+                material.albedoColor = Color3.FromArray(values.diffuseFactor);
+                material.alpha = values.diffuseFactor[3];
             }
 
-            return pbrMaterial;
+            if (values.diffuseTexture) {
+                this._loadTexture(gltfRuntime, id, values.diffuseTexture, texture => {
+                    material.albedoTexture = texture;
+                    material.useAlphaFromAlbedoTexture = true;
+                });
+            }
+
+            // Specular - Glossiness
+
+            if (values.specularFactor) {
+                material.reflectivityColor = Color3.FromArray(values.specularFactor);
+            }
+
+            material.microSurface = 1;
+            if (values.glossinessFactor) {
+                material.microSurface = values.glossinessFactor;
+            }
+
+            if (values.specularGlossinessTexture) {
+                this._loadTexture(gltfRuntime, id, values.specularGlossinessTexture, texture => {
+                    material.reflectivityTexture = texture;
+                    material.useMicroSurfaceFromReflectivityMapAlpha = true;
+                });
+            }
+
+            // Normal
+
+            if (values.normalTexture) {
+                this._loadTexture(gltfRuntime, id, values.normalTexture, texture => {
+                    material.bumpTexture = texture;
+                    if (values.normalScale) {
+                        material.bumpTexture.level = values.normalScale;
+                    }
+                });
+            }
+
+            // Occlusion
+
+            if (values.occlusionTexture) {
+                this._loadTexture(gltfRuntime, id, values.occlusionTexture, texture => {
+                    material.ambientTexture = texture;
+                    if (values.occlusionStrength) {
+                        material.ambientTextureStrength = values.occlusionStrength;
+                    }
+                });
+            }
+
+            // Emission
+
+            material.useEmissiveAsIllumination = true;
+
+            if (values.emissionFactor) {
+                material.emissiveColor = Color3.FromArray(values.emissionFactor);
+            }
+
+            if (values.emissionTexture) {
+                this._loadTexture(gltfRuntime, id, values.emissionTexture, texture => {
+                    material.emissiveTexture = texture;
+                });
+            }
+
+            return material;
+        }
+
+        private _loadTexture(gltfRuntime: IGLTFRuntime, materialId: string, textureId: string, onLoaded: (texture: Texture) => void): void {
+            var onError = () => {
+                Tools.Error("PBR material texture failed to load. material=\"" + materialId + "\", texture=\"" + textureId + "\"");
+            };
+
+            GLTFFileLoaderExtension.LoadTextureAsync(gltfRuntime, textureId, onLoaded, onError);
         }
     }
 
