@@ -495,6 +495,7 @@
         private _updatePointerInfo(eventData: PointerInfoBase, localPosition: Vector2): boolean {
             let s = this.scale;
             let pii = this._primPointerInfo;
+            pii.cancelBubble = false;
             if (!pii.canvasPointerPos) {
                 pii.canvasPointerPos = Vector2.Zero();
             }
@@ -606,7 +607,7 @@
                 let capturedPrim = this.getCapturedPrimitive(this._primPointerInfo.pointerId);
 
                 // Notify the previous "over" prim that the pointer is no longer over it
-                if ((capturedPrim && capturedPrim === prevPrim) || (!capturedPrim && prevPrim)) {
+                if ((capturedPrim && capturedPrim === prevPrim) || (!capturedPrim && prevPrim && !prevPrim.isDisposed)) {
                     this._primPointerInfo.updateRelatedTarget(prevPrim, this._previousOverPrimitive.intersectionLocation);
                     this._bubbleNotifyPrimPointerObserver(prevPrim, PrimitivePointerInfo.PointerOut, null);
                 }
@@ -661,7 +662,7 @@
 
             let bubbleCancelled = false;
             let cur = prim;
-            while (cur) {
+            while (cur && !cur.isDisposed) {
                 // Only trigger the observers if the primitive is intersected (except for out)
                 if (!bubbleCancelled) {
                     this._updatePrimPointerPos(cur);
@@ -870,7 +871,9 @@
             let index = Canvas2D._INSTANCES.indexOf(this);
             if (index > -1) {
                 Canvas2D._INSTANCES.splice(index, 1);
-            }  
+            }
+
+            return true;
         }
 
         /**
@@ -1047,6 +1050,10 @@
             this._setupInteraction(enable);
         }
 
+        public get fitRenderingDevice(): boolean {
+            return this._fitRenderingDevice;
+        }
+
         public get designSize(): Size {
             return this._designSize;
         }
@@ -1081,7 +1088,7 @@
                     new Rectangle2D({
                         id: "ProfileBorder", border: "#FFFFFFFF", borderThickness: 2, roundRadius: 5, fill: "#C04040C0", marginAlignment: "h: left, v: top", margin: "10", padding: "10", children:
                         [
-                            new Text2D("Stats", { id: "ProfileInfoText", marginAlignment: "h: left, v: top", fontName: "10pt Lucida Console" })
+                            new Text2D("Stats", { id: "ProfileInfoText", marginAlignment: "h: left, v: top", fontName: "12pt Lucida Console", fontSignedDistanceField: true })
                         ]
                     })
 
@@ -1153,7 +1160,7 @@
                     ` - Update Positioning: ${this.updatePositioningCounter.current}, (avg:${format(this.updatePositioningCounter.lastSecAverage)}, t:${format(this.updatePositioningCounter.total)})\n` + 
                     ` - Update Local  Trans: ${this.updateLocalTransformCounter.current}, (avg:${format(this.updateLocalTransformCounter.lastSecAverage)}, t:${format(this.updateLocalTransformCounter.total)})\n` + 
                     ` - Update Global Trans: ${this.updateGlobalTransformCounter.current}, (avg:${format(this.updateGlobalTransformCounter.lastSecAverage)}, t:${format(this.updateGlobalTransformCounter.total)})\n` + 
-                    ` - BoundingInfo Recompute: ${this.boundingInfoRecomputeCounter.current}, (avg:${format(this.boundingInfoRecomputeCounter.lastSecAverage)}, t:${format(this.boundingInfoRecomputeCounter.total)})\n`;
+                    ` - BoundingInfo Recompute: ${this.boundingInfoRecomputeCounter.current}, (avg:${format(this.boundingInfoRecomputeCounter.lastSecAverage)}, t:${format(this.boundingInfoRecomputeCounter.total)})`;
             this._profileInfoText.text = p;
         }
 
@@ -1532,7 +1539,7 @@
 
                 // Create a Sprite that will be used to render this cache, the "__cachedSpriteOfGroup__" starting id is a hack to bypass exception throwing in case of the Canvas doesn't normally allows direct primitives
                 else {
-                    sprite = new Sprite2D(map, { parent: parent, id: `__cachedSpriteOfGroup__${group.id}`, x: group.actualPosition.x * scale.x, y: group.actualPosition.y * scale.y, spriteSize: originalSize, spriteLocation: node.pos, dontInheritParentScale: true });
+                    sprite = new Sprite2D(map, { parent: parent, id: `__cachedSpriteOfGroup__${group.id}`, x: group.actualPosition.x, y: group.actualPosition.y, spriteSize: originalSize, spriteLocation: node.pos, dontInheritParentScale: true });
                     sprite.origin = group.origin.clone();
                     sprite.addExternalData("__cachedGroup__", group);
                     sprite.pointerEventObservable.add((e, s) => {
@@ -1763,6 +1770,7 @@
             //}
 
             let createWorldSpaceNode = !settings || (settings.customWorldSpaceNode == null);
+            this._customWorldSpaceNode = !createWorldSpaceNode;
             let id = settings ? settings.id || null : null;
 
             // Set the max size of texture allowed for the adaptive render of the world space canvas cached bitmap
@@ -1806,6 +1814,19 @@
                 }
             }, Prim2DBase.isVisibleProperty.flagId);
         }
+
+        public dispose(): boolean {
+            if (!super.dispose()) {
+                return false;
+            }
+
+            if (!this._customWorldSpaceNode && this._worldSpaceNode) {
+                this._worldSpaceNode.dispose();
+                this._worldSpaceNode = null;
+            }
+        }
+
+        private _customWorldSpaceNode: boolean;
     }
 
     @className("ScreenSpaceCanvas2D", "BABYLON")

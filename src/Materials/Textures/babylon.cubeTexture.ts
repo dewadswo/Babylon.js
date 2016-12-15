@@ -49,7 +49,7 @@
                 } else {
                     this.delayLoadState = Engine.DELAYLOADSTATE_NOTLOADED;
                 }
-            } else {
+            } else if (onLoad) {
                 if (this._texture.isReady) {
                     Tools.SetImmediate(() => onLoad());
                 } else {

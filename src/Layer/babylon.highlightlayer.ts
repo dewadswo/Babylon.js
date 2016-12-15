@@ -133,8 +133,8 @@
         private _vertexBuffers: { [key: string]: VertexBuffer } = {};
         private _indexBuffer: WebGLBuffer;
         private _downSamplePostprocess: PassPostProcess;
-        private _horizontalBlurPostprocess: GlowBlurPostProcess;
-        private _verticalBlurPostprocess: GlowBlurPostProcess;
+        private _horizontalBlurPostprocess: BlurPostProcess;
+        private _verticalBlurPostprocess: BlurPostProcess;
         private _cachedDefines: string;
         private _glowMapGenerationEffect: Effect;
         private _glowMapMergeEffect: Effect;
@@ -156,6 +156,11 @@
          * Specifies whether or not the outer glow is ACTIVE in the layer.
          */
         public outerGlow: boolean = true;
+
+        /**
+         * Specifies wether the highlight layer is enabled or not.
+         */
+        public isEnabled: boolean = true;
 
         /**
          * Specifies the horizontal size of the blur.
@@ -347,17 +352,32 @@
                 effect.setTexture("textureSampler", this._mainTexture);
             });
 
-            this._horizontalBlurPostprocess = new GlowBlurPostProcess("HighlightLayerHBP", new BABYLON.Vector2(1.0, 0), this._options.blurHorizontalSize, 1,
-                null, Texture.BILINEAR_SAMPLINGMODE, this._scene.getEngine());
-            this._horizontalBlurPostprocess.onApplyObservable.add(effect => {
-                effect.setFloat2("screenSize", blurTextureWidth, blurTextureHeight);
-            });
+            if (this._options.alphaBlendingMode === Engine.ALPHA_COMBINE) {
+                this._horizontalBlurPostprocess = new GlowBlurPostProcess("HighlightLayerHBP", new BABYLON.Vector2(1.0, 0), this._options.blurHorizontalSize, 1,
+                    null, Texture.BILINEAR_SAMPLINGMODE, this._scene.getEngine());
+                this._horizontalBlurPostprocess.onApplyObservable.add(effect => {
+                    effect.setFloat2("screenSize", blurTextureWidth, blurTextureHeight);
+                });
 
-            this._verticalBlurPostprocess = new GlowBlurPostProcess("HighlightLayerVBP", new BABYLON.Vector2(0, 1.0), this._options.blurVerticalSize, 1,
+                this._verticalBlurPostprocess = new GlowBlurPostProcess("HighlightLayerVBP", new BABYLON.Vector2(0, 1.0), this._options.blurVerticalSize, 1,
+                    null, Texture.BILINEAR_SAMPLINGMODE, this._scene.getEngine());
+                this._verticalBlurPostprocess.onApplyObservable.add(effect => {
+                    effect.setFloat2("screenSize", blurTextureWidth, blurTextureHeight);
+                });
+            }
+            else {
+                this._horizontalBlurPostprocess = new BlurPostProcess("HighlightLayerHBP", new BABYLON.Vector2(1.0, 0), this._options.blurHorizontalSize, 1,
                 null, Texture.BILINEAR_SAMPLINGMODE, this._scene.getEngine());
-            this._verticalBlurPostprocess.onApplyObservable.add(effect => {
-                effect.setFloat2("screenSize", blurTextureWidth, blurTextureHeight);
-            });
+                this._horizontalBlurPostprocess.onApplyObservable.add(effect => {
+                    effect.setFloat2("screenSize", blurTextureWidth, blurTextureHeight);
+                });
+
+                this._verticalBlurPostprocess = new BlurPostProcess("HighlightLayerVBP", new BABYLON.Vector2(0, 1.0), this._options.blurVerticalSize, 1,
+                    null, Texture.BILINEAR_SAMPLINGMODE, this._scene.getEngine());
+                this._verticalBlurPostprocess.onApplyObservable.add(effect => {
+                    effect.setFloat2("screenSize", blurTextureWidth, blurTextureHeight);
+                });
+            }
 
             this._mainTexture.onAfterUnbindObservable.add(() => {
                 this.onBeforeBlurObservable.notifyObservers(this);
@@ -476,7 +496,7 @@
          * @return true if ready otherwise, false
          */
         private isReady(subMesh: SubMesh, useInstances: boolean, emissiveTexture: Texture): boolean {
-            if (!subMesh.getMaterial().isReady()) {
+            if (!subMesh.getMaterial().isReady(subMesh.getMesh(), useInstances)) {
                 return false;
             }
 
@@ -722,7 +742,7 @@
          * Returns true if the layer contains information to display, otherwise false.
          */
         public shouldRender(): boolean {
-            return this._shouldRender;
+            return this.isEnabled && this._shouldRender;
         }
 
         /**

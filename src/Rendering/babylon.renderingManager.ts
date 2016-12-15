@@ -121,7 +121,6 @@
             for (var index = RenderingManager.MIN_RENDERINGGROUPS; index < RenderingManager.MAX_RENDERINGGROUPS; index++) {
                 this._depthStencilBufferAlreadyCleaned = index === RenderingManager.MIN_RENDERINGGROUPS;
                 var renderingGroup = this._renderingGroups[index];
-                var needToStepBack = false;
 
                 this._currentIndex = index;
 
@@ -157,11 +156,7 @@
                         observable.notifyObservers(info, renderingGroupMask);
                     }
 
-                    if (!renderingGroup.render(customRenderFunction)) {
-                        this._renderingGroups.splice(index, 1);
-                        needToStepBack = true;
-                        this._renderSpritesAndParticles();
-                    }
+                    renderingGroup.render(customRenderFunction);
 
                     // Fire POSTTRANSPARENT stage
                     if (observable) {
@@ -180,10 +175,6 @@
                         info.renderStage = RenderingGroupInfo.STAGE_POSTTRANSPARENT;
                         observable.notifyObservers(info, renderingGroupMask);
                     }
-                }
-
-                if (needToStepBack) {
-                    index--;
                 }
             }
         }

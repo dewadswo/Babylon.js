@@ -20,7 +20,7 @@
         * Use this predicate to dynamically define the list of mesh you want to render.
         * If set, the renderList property will be overwritten.
         */
-        public renderListPredicate: (AbstractMesh) => boolean;
+        public renderListPredicate: (AbstractMesh: AbstractMesh) => boolean;
 
         /**
         * Use this list to define the list of mesh you want to render.
@@ -207,6 +207,7 @@
 
         public render(useCameraPostProcess?: boolean, dumpForDebug?: boolean) {
             var scene = this.getScene();
+            var engine = scene.getEngine();
 
             if (this.useCameraPostProcesses !== undefined) {
                 useCameraPostProcess = this.useCameraPostProcesses;
@@ -214,6 +215,8 @@
 
             if (this.activeCamera && this.activeCamera !== scene.activeCamera) {
                 scene.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(true));
+            } else {
+                scene.setTransformMatrix(scene.activeCamera.getViewMatrix(), scene.activeCamera.getProjectionMatrix(true));               
             }
 
             if (this._waitingRenderList) {
@@ -289,6 +292,7 @@
             if (this.activeCamera && this.activeCamera !== scene.activeCamera) {
                 scene.setTransformMatrix(scene.activeCamera.getViewMatrix(), scene.activeCamera.getProjectionMatrix(true));
             }
+            engine.setViewport(scene.activeCamera.viewport);
 
             scene.resetCachedMaterial();
         }
@@ -304,6 +308,13 @@
                 } else {
                     engine.bindFramebuffer(this._texture);
                 }
+            }
+            
+            if (this.activeCamera) {
+                engine.setViewport(this.activeCamera.viewport);
+            }
+            else {
+                engine.setViewport(scene.activeCamera.viewport);
             }
 
             this.onBeforeRenderObservable.notifyObservers(faceIndex);

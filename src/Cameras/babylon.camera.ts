@@ -123,6 +123,7 @@
         // Cache
         private _computedViewMatrix = Matrix.Identity();
         public _projectionMatrix = new Matrix();
+        private _doNotComputeProjectionMatrix = false;
         private _worldMatrix: Matrix;
         public _postProcesses = new Array<PostProcess>();
         private _transformMatrix = Matrix.Zero();
@@ -146,12 +147,16 @@
             this.position = position;
         }
 
+        public getClassName(): string {
+            return "Camera";
+        }          
+
         /**
          * @param {boolean} fullDetails - support for multiple levels of logging within scene loading
          */
         public toString(fullDetails?: boolean): string {
             var ret = "Name: " + this.name;
-            ret += ", type: " + this.getTypeName();
+            ret += ", type: " + this.getClassName();
             if (this.animations) {
                 for (var i = 0; i < this.animations.length; i++) {
                     ret += ", animation[0]: " + this.animations[i].toString(fullDetails);
@@ -413,8 +418,19 @@
             return this._computedViewMatrix;
         }
 
+        public freezeProjectionMatrix(projection?: Matrix): void {
+            this._doNotComputeProjectionMatrix = true;
+            if (projection !== undefined) {
+                this._projectionMatrix = projection;
+            }
+        };
+        
+        public unfreezeProjectionMatrix(): void {
+            this._doNotComputeProjectionMatrix = false;
+        };
+        
         public getProjectionMatrix(force?: boolean): Matrix {
-            if (!force && this._isSynchronizedProjectionMatrix()) {
+            if (this._doNotComputeProjectionMatrix || (!force && this._isSynchronizedProjectionMatrix())) {
                 return this._projectionMatrix;
             }
 
@@ -668,7 +684,7 @@
             var serializationObject = SerializationHelper.Serialize(this);
 
             // Type
-            serializationObject.type = this.getTypeName();
+            serializationObject.type = this.getClassName();
 
             // Parent
             if (this.parent) {
@@ -685,12 +701,20 @@
             return serializationObject;
         }
 
-        public getTypeName(): string {
-            return "Camera";
+        public clone(name: string): Camera {
+            return SerializationHelper.Clone(Camera.GetConstructorFromName(this.getClassName(), name, this.getScene(), this.interaxialDistance, this.isStereoscopicSideBySide), this);
         }
 
-        public clone(name: string): Camera {
-            return SerializationHelper.Clone(Camera.GetConstructorFromName(this.getTypeName(), name, this.getScene(), this.interaxialDistance, this.isStereoscopicSideBySide), this);
+        public getDirection(localAxis:Vector3): Vector3 {
+            var result = Vector3.Zero();
+
+            this.getDirectionToRef(localAxis, result);
+            
+            return result;
+        }
+
+        public getDirectionToRef(localAxis:Vector3, result:Vector3): void {
+            Vector3.TransformNormalToRef(localAxis, this.getWorldMatrix(), result);
         }
 
         static GetConstructorFromName(type: string, name: string, scene: Scene, interaxial_distance: number = 0, isStereoscopicSideBySide: boolean = true): () => Camera {
