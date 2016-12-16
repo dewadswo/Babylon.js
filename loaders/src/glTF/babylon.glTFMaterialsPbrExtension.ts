@@ -4,18 +4,29 @@
         values: any;
     }
 
-    interface IGLTFMaterialsPbrExtensionSpecularGlossiness {
-        diffuseFactor: number[];
-        diffuseTexture: string;
-        specularFactor: number[];
-        glossinessFactor: number;
-        specularGlossinessTexture: string;
+    interface IGLTFMaterialsPbrExtensionCommonValues {
         normalTexture: string;
         normalScale: number;
         occlusionTexture: string;
         occlusionStrength: number;
         emissionFactor: number[];
         emissionTexture: string;
+    }
+
+    interface IGLTFMaterialsPbrExtensionSpecularGlossinessValues extends IGLTFMaterialsPbrExtensionCommonValues {
+        diffuseFactor: number[];
+        diffuseTexture: string;
+        specularFactor: number[];
+        glossinessFactor: number;
+        specularGlossinessTexture: string;
+    }
+
+    interface IGLTFMaterialsPbrExtensionMetalRoughnessValues extends IGLTFMaterialsPbrExtensionCommonValues {
+        baseColorFactor: number[];
+        baseColorTexture: string;
+        metallicFactor: number;
+        roughnessFactor: number;
+        metallicRoughnessTexture: string;
     }
 
     export class GLTFMaterialsPbrExtension extends GLTFFileLoaderExtension {
@@ -34,6 +45,9 @@
                 case "PBR_specular_glossiness":
                     onSuccess(this._loadSpecularGlossinessMaterial(gltfRuntime, id, materialPbrExt));
                     break;
+                case "PBR_metal_roughness":
+                    onSuccess(this._loadMetalRoughnessMaterial(gltfRuntime, id, materialPbrExt));
+                    break;
                 default:
                     Tools.Error(this.name + " of material '" + id + "' specifies an unsupported material model '" + materialPbrExt.materialModel + "'");
                     onError();
@@ -47,7 +61,7 @@
             var material = new PBRMaterial(id, gltfRuntime.scene);
             material.sideOrientation = Material.CounterClockWiseSideOrientation;
 
-            var values: IGLTFMaterialsPbrExtensionSpecularGlossiness = materialPbrExt.values;
+            var values: IGLTFMaterialsPbrExtensionSpecularGlossinessValues = materialPbrExt.values;
 
             // Diffuse
 
@@ -81,6 +95,55 @@
                 });
             }
 
+            this._loadCommonMaterialProperties(gltfRuntime, id, values, material);
+
+            return material;
+        }
+
+        private _loadMetalRoughnessMaterial(gltfRuntime: IGLTFRuntime, id: string, materialPbrExt: IGLTFMaterialsPbrExtension): Material {
+            var material = new PBRMaterial(id, gltfRuntime.scene);
+            material.sideOrientation = Material.CounterClockWiseSideOrientation;
+
+            var values: IGLTFMaterialsPbrExtensionMetalRoughnessValues = materialPbrExt.values;
+
+            // BaseColor
+
+            if (values.baseColorFactor) {
+                material.albedoColor = Color3.FromArray(values.baseColorFactor);
+                material.alpha = values.baseColorFactor[3];
+            }
+
+            if (values.baseColorTexture) {
+                this._loadTexture(gltfRuntime, id, values.baseColorTexture, texture => {
+                    material.albedoTexture = texture;
+                    material.useAlphaFromAlbedoTexture = true;
+                });
+            }
+
+            // Metallic - Roughness
+
+            if (values.metallicFactor) {
+                material.metallic = values.metallicFactor;
+            }
+
+            if (values.roughnessFactor) {
+                material.roughness = values.roughnessFactor;
+            }
+
+            if (values.metallicRoughnessTexture) {
+                this._loadTexture(gltfRuntime, id, values.metallicRoughnessTexture, texture => {
+                    material.metallicTexture = texture;
+                    material.useRoughnessFromMetallicTextureAlpha = false;
+                    material.useRoughnessFromMetallicTextureGreen = true;
+                });
+            }
+
+            this._loadCommonMaterialProperties(gltfRuntime, id, values, material);
+
+            return material;
+        }
+
+        private _loadCommonMaterialProperties(gltfRuntime: IGLTFRuntime, id: string, values: IGLTFMaterialsPbrExtensionCommonValues, material: PBRMaterial): void {
             // Normal
 
             if (values.normalTexture) {
@@ -116,8 +179,6 @@
                     material.emissiveTexture = texture;
                 });
             }
-
-            return material;
         }
 
         private _loadTexture(gltfRuntime: IGLTFRuntime, materialId: string, textureId: string, onLoaded: (texture: Texture) => void): void {
