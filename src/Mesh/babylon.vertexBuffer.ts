@@ -14,6 +14,7 @@
                     case VertexBuffer.PositionKind:
                         stride = 3;
                         break;
+                    case VertexBuffer.BiTangentKind:
                     case VertexBuffer.NormalKind:
                         stride = 3;
                         break;
@@ -25,6 +26,7 @@
                     case VertexBuffer.UV6Kind:
                         stride = 2;
                         break;
+                    case VertexBuffer.TangentKind:
                     case VertexBuffer.ColorKind:
                         stride = 4;
                         break;
@@ -154,6 +156,8 @@
         // Enums
         private static _PositionKind = "position";
         private static _NormalKind = "normal";
+        private static _TangentKind = "tangent";
+        private static _BiTangentKind = "bitangent";
         private static _UVKind = "uv";
         private static _UV2Kind = "uv2";
         private static _UV3Kind = "uv3";
@@ -172,6 +176,14 @@
 
         public static get NormalKind(): string {
             return VertexBuffer._NormalKind;
+        }
+
+        public static get TangentKind(): string {
+            return VertexBuffer._TangentKind;
+        }
+
+        public static get BiTangentKind(): string {
+            return VertexBuffer._BiTangentKind;
         }
 
         public static get UVKind(): string {
