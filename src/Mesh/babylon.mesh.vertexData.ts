@@ -1,7 +1,8 @@
 ﻿module BABYLON {
     export type IndicesArray = number[] | Int32Array | Uint32Array | Uint16Array;
 
-    export interface IGetSetVerticesData {
+    export interface IGetSetVerticesData
+    {
         isVerticesDataPresent(kind: string): boolean;
         getVerticesData(kind: string, copyWhenShared?: boolean): number[] | Float32Array;
         getIndices(copyWhenShared?: boolean): IndicesArray;
@@ -39,7 +40,7 @@
                 case VertexBuffer.TangentKind:
                     this.tangents = data;
                     break;
-                case VertexBuffer.BiTangentKind:
+                case VertexBuffer.BitangentKind:
                     this.bitangents = data;
                     break;
                 case VertexBuffer.UVKind:
@@ -130,7 +131,7 @@
             }
 
             if (this.bitangents) {
-                meshOrGeometry.setVerticesData(VertexBuffer.BiTangentKind, this.bitangents, updatable);
+                meshOrGeometry.setVerticesData(VertexBuffer.BitangentKind, this.bitangents, updatable);
             }
 
             if (this.uvs) {
@@ -197,7 +198,7 @@
             }
 
             if (this.bitangents) {
-                meshOrGeometry.updateVerticesData(VertexBuffer.BiTangentKind, this.bitangents, updateExtends, makeItUnique);
+                meshOrGeometry.updateVerticesData(VertexBuffer.BitangentKind, this.bitangents, updateExtends, makeItUnique);
             }
 
             if (this.uvs) {
@@ -482,8 +483,8 @@
                 result.tangents = meshOrGeometry.getVerticesData(VertexBuffer.TangentKind, copyWhenShared);
             }
 
-            if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.BiTangentKind)) {
-                result.bitangents = meshOrGeometry.getVerticesData(VertexBuffer.BiTangentKind, copyWhenShared);
+            if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.BitangentKind)) {
+                result.bitangents = meshOrGeometry.getVerticesData(VertexBuffer.BitangentKind, copyWhenShared);
             }
 
             if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.UVKind)) {
@@ -2393,7 +2394,7 @@
             // bitangents
             var bitangents = parsedVertexData.bitangents;
             if (bitangents) {
-                vertexData.set(bitangents, VertexBuffer.BiTangentKind);
+                vertexData.set(bitangents, VertexBuffer.BitangentKind);
             }
 
             // uvs

@@ -951,7 +951,7 @@
                     if (mesh.isVerticesDataPresent(VertexBuffer.TangentKind)) {
                         this._defines.TANGENT = true;
                     }
-                    if (mesh.isVerticesDataPresent(VertexBuffer.BiTangentKind)) {
+                    if (mesh.isVerticesDataPresent(VertexBuffer.BitangentKind)) {
                         this._defines.BITANGENT = true;
                     }
                 }
@@ -1063,7 +1063,7 @@
                 }
 
                 if (this._defines.BITANGENT) {
-                    attribs.push(VertexBuffer.BiTangentKind);
+                    attribs.push(VertexBuffer.BitangentKind);
                 }
 
                 if (this._defines.UV1) {

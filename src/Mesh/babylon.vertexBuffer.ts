@@ -14,7 +14,7 @@
                     case VertexBuffer.PositionKind:
                         stride = 3;
                         break;
-                    case VertexBuffer.BiTangentKind:
+                    case VertexBuffer.BitangentKind:
                     case VertexBuffer.NormalKind:
                         stride = 3;
                         break;
@@ -157,7 +157,7 @@
         private static _PositionKind = "position";
         private static _NormalKind = "normal";
         private static _TangentKind = "tangent";
-        private static _BiTangentKind = "bitangent";
+        private static _BitangentKind = "bitangent";
         private static _UVKind = "uv";
         private static _UV2Kind = "uv2";
         private static _UV3Kind = "uv3";
@@ -182,8 +182,8 @@
             return VertexBuffer._TangentKind;
         }
 
-        public static get BiTangentKind(): string {
-            return VertexBuffer._BiTangentKind;
+        public static get BitangentKind(): string {
+            return VertexBuffer._BitangentKind;
         }
 
         public static get UVKind(): string {

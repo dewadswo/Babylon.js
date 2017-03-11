@@ -597,7 +597,7 @@ module BABYLON {
             }
 
             //bitangent aka binormal
-            if (tempVertexData.tangents !== undefined && tempVertexData.tangents !== null) {
+            if (tempVertexData.tangents) {
                 var bitangents: number[] = [];
                 var tindex = 0;
                 for (var i = 0; i < tempVertexData.normals.length; i += 3) {

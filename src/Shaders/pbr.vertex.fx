@@ -85,6 +85,7 @@ varying vec3 vNormalW;
 varying vec4 vColor;
 #endif
 
+
 #include<bumpVertexDeclaration>
 #include<clipPlaneVertexDeclaration>
 #include<fogVertexDeclaration>
