@@ -15,7 +15,6 @@
         public positions: number[] | Float32Array;
         public normals: number[] | Float32Array;
         public tangents: number[] | Float32Array;
-        public bitangents: number[] | Float32Array;
         public uvs: number[] | Float32Array;
         public uvs2: number[] | Float32Array;
         public uvs3: number[] | Float32Array;
@@ -39,9 +38,6 @@
                     break;
                 case VertexBuffer.TangentKind:
                     this.tangents = data;
-                    break;
-                case VertexBuffer.BitangentKind:
-                    this.bitangents = data;
                     break;
                 case VertexBuffer.UVKind:
                     this.uvs = data;
@@ -130,10 +126,6 @@
                 meshOrGeometry.setVerticesData(VertexBuffer.TangentKind, this.tangents, updatable);
             }
 
-            if (this.bitangents) {
-                meshOrGeometry.setVerticesData(VertexBuffer.BitangentKind, this.bitangents, updatable);
-            }
-
             if (this.uvs) {
                 meshOrGeometry.setVerticesData(VertexBuffer.UVKind, this.uvs, updatable);
             }
@@ -195,10 +187,6 @@
 
             if (this.tangents) {
                 meshOrGeometry.updateVerticesData(VertexBuffer.TangentKind, this.tangents, updateExtends, makeItUnique);
-            }
-
-            if (this.bitangents) {
-                meshOrGeometry.updateVerticesData(VertexBuffer.BitangentKind, this.bitangents, updateExtends, makeItUnique);
             }
 
             if (this.uvs) {
@@ -299,19 +287,6 @@
                 }
             }
 
-            if (this.bitangents) {
-                var bitangent = Vector3.Zero();
-
-                for (index = 0; index < this.bitangents.length; index += 3) {
-                    Vector3.FromArrayToRef(this.bitangents, index, bitangent);
-
-                    Vector3.TransformNormalToRef(bitangent, matrix, transformed);
-                    this.bitangents[index] = transformed.x;
-                    this.bitangents[index + 1] = transformed.y;
-                    this.bitangents[index + 2] = transformed.z;
-                }
-            }
-
             return this;
         }
 
@@ -335,7 +310,6 @@
             this.positions = this._mergeElement(this.positions, other.positions);
             this.normals = this._mergeElement(this.normals, other.normals);
             this.tangents = this._mergeElement(this.tangents, other.tangents);
-            this.bitangents = this._mergeElement(this.bitangents, other.bitangents);
             this.uvs = this._mergeElement(this.uvs, other.uvs);
             this.uvs2 = this._mergeElement(this.uvs2, other.uvs2);
             this.uvs3 = this._mergeElement(this.uvs3, other.uvs3);
@@ -396,10 +370,6 @@
 
             if (this.tangents) {
                 serializationObject.tangents = this.tangents;
-            }
-
-            if (this.bitangents) {
-                serializationObject.bitangents = this.bitangents;
             }
 
             if (this.uvs) {
@@ -481,10 +451,6 @@
 
             if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.TangentKind)) {
                 result.tangents = meshOrGeometry.getVerticesData(VertexBuffer.TangentKind, copyWhenShared);
-            }
-
-            if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.BitangentKind)) {
-                result.bitangents = meshOrGeometry.getVerticesData(VertexBuffer.BitangentKind, copyWhenShared);
             }
 
             if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.UVKind)) {
@@ -2389,12 +2355,6 @@
             var tangents = parsedVertexData.tangents;
             if (tangents) {
                 vertexData.set(tangents, VertexBuffer.TangentKind);
-            }
-
-            // bitangents
-            var bitangents = parsedVertexData.bitangents;
-            if (bitangents) {
-                vertexData.set(bitangents, VertexBuffer.BitangentKind);
             }
 
             // uvs

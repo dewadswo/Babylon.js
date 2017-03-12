@@ -595,25 +595,7 @@ module BABYLON {
                 tempVertexData.indices = new Int32Array(indices);
                 indexCounts.push(tempVertexData.indices.length);
             }
-
-            //bitangent aka binormal
-            if (tempVertexData.tangents) {
-                var bitangents: number[] = [];
-                var tindex = 0;
-                for (var i = 0; i < tempVertexData.normals.length; i += 3) {
-                    var n = Vector3.FromArray(tempVertexData.normals, i);
-                    var t = Vector4.FromArray(tempVertexData.tangents, tindex);
-                    //bitangent cross product of normal and tangent
-                    var bitangent = Vector3.Cross(n, t.toVector3().scale((t.w < 0) ? -1 : 1)).asArray();
-                    bitangents.push(bitangent[0]);
-                    bitangents.push(bitangent[1]);
-                    bitangents.push(bitangent[2]);
-                    tindex += 4;
-                }
-                tempVertexData.bitangents = new Float32Array(bitangents.length);
-                (<Float32Array>tempVertexData.bitangents).set(bitangents);
-            }
-
+            
             vertexData.merge(tempVertexData);
             tempVertexData = undefined;
 

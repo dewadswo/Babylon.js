@@ -25,7 +25,6 @@
         public FRESNEL = false;
         public NORMAL = false;
         public TANGENT = false;
-        public BITANGENT = false; //aka binormal
         public UV1 = false;
         public UV2 = false;
         public VERTEXCOLOR = false;
@@ -552,9 +551,6 @@
                     if (mesh.isVerticesDataPresent(VertexBuffer.TangentKind)) {
                         this._defines.TANGENT = true;
                     }
-                    if (mesh.isVerticesDataPresent(VertexBuffer.BitangentKind)) {
-                        this._defines.BITANGENT = true;
-                    }
                 }
                 if (needUVs) {
                     if (mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
@@ -661,10 +657,6 @@
 
                 if (this._defines.TANGENT) {
                     attribs.push(VertexBuffer.TangentKind);
-                }
-
-                if (this._defines.BITANGENT) {
-                    attribs.push(VertexBuffer.BitangentKind);
                 }
 
                 if (this._defines.UV1) {

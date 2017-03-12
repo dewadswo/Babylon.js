@@ -6,9 +6,6 @@ attribute vec3 normal;
 #ifdef TANGENT
 attribute vec4 tangent;
 #endif
-#ifdef BITANGENT
-attribute vec3 bitangent; //aka binormal
-#endif
 #ifdef UV1
 attribute vec2 uv;
 #endif
